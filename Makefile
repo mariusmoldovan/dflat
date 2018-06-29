@@ -1,3 +1,6 @@
+CXX=/home/mmoldova/.root/usr/bin/g++
+CC=/home/mmoldova/.root/usr/bin/gcc
+
 # You probably need to adjust the *_dir variables before running "make"
 cxxflags_release="-DWITH_THREADS=0"
 cxxflags_debug=$(cxxflags_release)
@@ -7,8 +10,8 @@ cxxflags_release32="-DWITH_THREADS=0 -m32 -DNO_UNICODE"
 cxxflags_static=$(cxxflags_release)
 cxxflags_static32=$(cxxflags_release32)
 
-gringo_dir=$(CURDIR)/../gringo-4.5.4-source
-gringo_lib=$(gringo_dir)/build/release/libgringo.a
+gringo_dir=/home/mmoldova/.root/usr
+gringo_lib=$(gringo_dir)/lib/libgringo.a #$(gringo_dir)/build/release/libgringo.a
 gringo_lib_debug=$(gringo_dir)/build/debug/libgringo.a
 gringo_lib_gprof=$(gringo_dir)/build/release/libgringo.a
 gringo_lib_profiler=$(gringo_dir)/build/release/libgringo.a
@@ -16,8 +19,8 @@ gringo_lib_release32=$(gringo_dir)/build/release32/libgringo.a
 gringo_lib_static=$(gringo_dir)/build/static/libgringo.a
 gringo_lib_static32=$(gringo_dir)/build/static32/libgringo.a
 
-clasp_dir=$(CURDIR)/../clasp-3.1.4
-clasp_lib=$(clasp_dir)/build/release/libclasp/lib/libclasp.a
+clasp_dir=/home/mmoldova/.root/usr
+clasp_lib=$(clasp_dir)/lib/libclasp.a #$(clasp_dir)/build/release/libclasp/lib/libclasp.a
 clasp_lib_debug=$(clasp_dir)/build/debug/libclasp/lib/libclasp.a
 clasp_lib_gprof=$(clasp_dir)/build/gprof/libclasp/lib/libclasp.a
 clasp_lib_profiler=$(clasp_dir)/build/release/libclasp/lib/libclasp.a
@@ -25,14 +28,16 @@ clasp_lib_release32=$(clasp_dir)/build/release_m32/libclasp/lib/libclasp.a
 clasp_lib_static=$(clasp_dir)/build/static/libclasp/lib/libclasp.a
 clasp_lib_static32=$(clasp_dir)/build/static32/libclasp/lib/libclasp.a
 
-htd_dir=$(CURDIR)/../htd-1.0.1
-htd_lib=$(htd_dir)/build/release/lib/libhtd.a
-htd_lib_debug=$(htd_dir)/build/debug/lib/libhtd.a
-htd_lib_gprof=$(htd_dir)/build/release/lib/libhtd.a
-htd_lib_profiler=$(htd_dir)/build/release/lib/libhtd.a
-htd_lib_release32=$(htd_dir)/build/release32/lib/libhtd.a
-htd_lib_static=$(htd_dir)/build/static/lib/libhtd.a
-htd_lib_static32=$(htd_dir)/build/static32/lib/libhtd.a
+htd_dir=/home/mmoldova/.root/usr
+htd_lib=$(htd_dir)/lib/libhtd.a #$(htd_dir)/lib/libhtd.a
+htd_lib_debug=$(htd_dir)/lib/libhtd.a
+htd_lib_gprof=$(htd_dir)/lib/libhtd.a
+htd_lib_profiler=$(htd_dir)/lib/libhtd.a
+htd_lib_release32=$(htd_dir)/lib/libhtd.a
+htd_lib_static=$(htd_dir)/lib/libhtd.a
+htd_lib_static32=$(htd_dir)/lib/libhtd.a
+
+python_lib=/home/mmoldova/.root/usr/lib/libpython2.7.a
 
 gtest_dir=/usr/src/gtest
 
@@ -60,11 +65,14 @@ release:
 	$(call write_version_header) && \
 	cmake ../../src \
 		$(cmake_extra_options) \
+		-DCMAKE_CXX_COMPILER=$(CXX) \
+		-DCMAKE_C_COMPILER=$(CC) \
 		-DCMAKE_BUILD_TYPE=release \
 		-DCMAKE_CXX_FLAGS:STRING=$(cxxflags_release) \
 		-Dgringo_lib=$(gringo_lib) \
 		-Dclasp_lib=$(clasp_lib) \
 		-Dhtd_lib=$(htd_lib) \
+		-Dpython_lib=$(python_lib) \
 		-Dgringo_dir=$(gringo_dir) \
 		-Dclasp_dir=$(clasp_dir) \
 		-Dhtd_dir=$(htd_dir) \

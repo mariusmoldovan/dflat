@@ -21,6 +21,7 @@ along with D-FLAT.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 //}}}
 #include "../EncodingChecker.h"
+#include <clingo.hh>
 
 namespace solver { namespace clasp { namespace trees {
 
@@ -29,7 +30,7 @@ class EncodingChecker : public ::solver::clasp::EncodingChecker
 public:
 	using ::solver::clasp::EncodingChecker::EncodingChecker;
 
-	virtual void showsig(Gringo::Location const &loc, Gringo::FWSignature sig, bool csp) override;
+	virtual void showsig(Gringo::Location const &loc, Gringo::Sig sig, bool csp) override;
 	virtual void check() override;
 
 private:

@@ -23,6 +23,7 @@ along with D-FLAT.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 
 #include "../../Solver.h"
+#include <gringo/logger.hh>
 
 namespace solver { namespace clasp {
 
@@ -38,6 +39,7 @@ private:
 	bool tableMode;
 	bool cardinalityCost;
 	bool printStatistics;
+	Gringo::Logger logger_;
 };
 
 }} // namespace solver::clasp

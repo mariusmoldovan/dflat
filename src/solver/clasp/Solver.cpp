@@ -24,9 +24,12 @@ along with D-FLAT.  If not, see <http://www.gnu.org/licenses/>.
 #include <gringo/input/programbuilder.hh>
 #include <gringo/output/output.hh>
 #include <gringo/logger.hh>
-#include <gringo/scripts.hh>
+#include <gringo/backend.hh>
+//#include <gringo/scripts.hh>
 #include <clasp/clasp_facade.h>
 #include <clasp/cli/clasp_output.h>
+
+#include <potassco/theory_data.h>
 
 #include "Solver.h"
 #include "../../Application.h"
@@ -46,13 +49,14 @@ namespace {
 
 std::unique_ptr<asp_utils::GringoOutputProcessor> newGringoOutputProcessor(Clasp::Asp::LogicProgram& claspProgramBuilder, const ChildItemTrees& childItemTrees, bool tableMode)
 {
+	Gringo::ClingoControl ctl;
 	if(tableMode)
-		return std::unique_ptr<asp_utils::GringoOutputProcessor>(new tables::GringoOutputProcessor(claspProgramBuilder, childItemTrees));
+		return std::unique_ptr<asp_utils::GringoOutputProcessor>(new tables::GringoOutputProcessor(ctl, claspProgramBuilder, childItemTrees));
 	else
-		return std::unique_ptr<asp_utils::GringoOutputProcessor>(new trees::GringoOutputProcessor(claspProgramBuilder, childItemTrees));
+		return std::unique_ptr<asp_utils::GringoOutputProcessor>(new trees::GringoOutputProcessor(ctl, claspProgramBuilder, childItemTrees));
 }
 
-std::unique_ptr<asp_utils::ClaspCallback> newClaspCallback(bool tableMode, const Gringo::Output::LparseOutputter& gringoOutput, const ChildItemTrees& childItemTrees, const Application& app, bool root, const Decomposition& decomposition, bool cardinalityCost)
+std::unique_ptr<asp_utils::ClaspCallback> newClaspCallback(bool tableMode, const Gringo::Backend& gringoOutput, const ChildItemTrees& childItemTrees, const Application& app, bool root, const Decomposition& decomposition, bool cardinalityCost)
 {
 	if(tableMode)
 		return std::unique_ptr<asp_utils::ClaspCallback>(new tables::ClaspCallback(dynamic_cast<const tables::GringoOutputProcessor&>(gringoOutput), childItemTrees, app, root, cardinalityCost));
@@ -71,7 +75,7 @@ Solver::Solver(const Decomposition& decomposition, const Application& app, const
 	, cardinalityCost(cardinalityCost)
 	, printStatistics(printStatistics)
 {
-	Gringo::message_printer()->disable(Gringo::W_ATOM_UNDEFINED);
+	logger_.enable(Gringo::Warnings::AtomUndefined, false);
 
 #ifndef DISABLE_CHECKS
 	// TODO: Implement tables::EncodingChecker
@@ -80,16 +84,17 @@ Solver::Solver(const Decomposition& decomposition, const Application& app, const
 		// Otherwise we'd probably do checks redundantly.
 		if(decomposition.isRoot()) {
 			std::ofstream dummyStream;
-			std::unique_ptr<Gringo::Output::OutputBase> out(new Gringo::Output::OutputBase({}, dummyStream));
+			Potassco::TheoryData td;
+			std::unique_ptr<Gringo::Output::OutputBase> out(new Gringo::Output::OutputBase(td, {}, dummyStream));
 			Gringo::Input::Program program;
-			asp_utils::DummyGringoModule module;
-			Gringo::Scripts scripts(module);
+			Gringo::Scripts scripts;
 			Gringo::Defines defs;
 			std::unique_ptr<EncodingChecker> encodingChecker{new trees::EncodingChecker(scripts, program, *out, defs)};
-			Gringo::Input::NonGroundParser parser(*encodingChecker);
+			bool incmode = false;
+			Gringo::Input::NonGroundParser parser(*encodingChecker, incmode);
 			for(const auto& file : encodingFiles)
-				parser.pushFile(std::string(file));
-			parser.parse();
+				parser.pushFile(std::string(file), logger_);
+			parser.parse(logger_);
 			encodingChecker->check();
 		}
 	}
@@ -136,32 +141,37 @@ ItemTreePtr Solver::compute()
 	Clasp::ClaspFacade clasp;
 	// TODO The last parameter of clasp.startAsp in the next line is "allowUpdate". Does setting it to false have benefits?
 	Clasp::Asp::LogicProgram& claspProgramBuilder = dynamic_cast<Clasp::Asp::LogicProgram&>(clasp.startAsp(config));
-	std::unique_ptr<Gringo::Output::LparseOutputter> lpOut(newGringoOutputProcessor(claspProgramBuilder, childItemTrees, tableMode));
-	std::unique_ptr<Gringo::Output::OutputBase> out(new Gringo::Output::OutputBase({}, *lpOut));
+	std::unique_ptr<Gringo::Backend> lpOut(newGringoOutputProcessor(claspProgramBuilder, childItemTrees, tableMode));
+	Potassco::TheoryData td;
+        std::unique_ptr<Gringo::Output::OutputBase> out(new Gringo::Output::OutputBase(td, {}, std::move(lpOut)));
 	Gringo::Input::Program program;
-	asp_utils::DummyGringoModule module;
-	Gringo::Scripts scripts(module);
+	Gringo::Scripts scripts;
 	Gringo::Defines defs;
+	bool incmode = false;
 	Gringo::Input::NongroundProgramBuilder gringoProgramBuilder(scripts, program, *out, defs);
-	Gringo::Input::NonGroundParser parser(gringoProgramBuilder);
+	Gringo::Input::NonGroundParser parser(gringoProgramBuilder, incmode);
 
 	// Pass input to ASP solver
 	for(const auto& file : encodingFiles)
-		parser.pushFile(std::string(file));
-	parser.pushStream("<instance>", std::move(instanceInput));
-	parser.pushStream("<decomposition>", std::move(decompositionInput));
-	parser.pushStream("<child_itrees>", std::move(childItemTreesInput));
-	parser.parse();
+		parser.pushFile(std::string(file), logger_);
+	parser.pushStream("<instance>", std::move(instanceInput), logger_);
+	parser.pushStream("<decomposition>", std::move(decompositionInput), logger_);
+	parser.pushStream("<child_itrees>", std::move(childItemTreesInput), logger_);
+	parser.parse(logger_);
 
 	// Ground and solve
-	program.rewrite(defs);
-	program.check();
-	if(Gringo::message_printer()->hasError())
-		throw std::runtime_error("Grounding stopped because of errors");
-	auto gPrg = program.toGround(out->domains);
+	program.rewrite(defs, logger_);
+	program.check(logger_);
+
+
+	#warning fix me later
+	//if(Gringo::message_printer()->hasError())
+	//	throw std::runtime_error("Grounding stopped because of errors");
+
+	auto gPrg = program.toGround(out->data, logger_);
 	Gringo::Ground::Parameters params;
 	params.add("base", {});
-	gPrg.ground(params, scripts, *out);
+	gPrg.ground(params, scripts, *out, true, logger_);
 	params.clear();
 	// Finalize ground program and create solver variables
 	claspProgramBuilder.endProgram();

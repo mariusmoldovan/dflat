@@ -21,7 +21,7 @@ along with D-FLAT.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 //}}}
 #include <clasp/clasp_facade.h>
-#include <gringo/control.hh>
+//#include <gringo/control.hh>
 
 #include "Decomposition.h"
 #include "Instance.h"
@@ -35,13 +35,7 @@ along with D-FLAT.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 namespace asp_utils {
-	class DummyGringoModule : public Gringo::GringoModule
-	{
-		virtual Gringo::Control *newControl(int argc, char const **argv) override { throw std::logic_error("DummyGringoModule"); };
-		virtual void freeControl(Gringo::Control *ctrl) override { throw std::logic_error("DummyGringoModule"); };
-		virtual Gringo::Value parseValue(std::string const &repr) override { throw std::logic_error("DummyGringoModule"); };
-	};
-
+	
 	template<typename T>
 	struct GringoAtomInfo {
 		T arguments;

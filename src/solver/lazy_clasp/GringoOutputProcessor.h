@@ -102,7 +102,7 @@ public:
 	const AllCurrentCounterAtomInfos&       getAllCurrentCounterAtomInfos()     const;
 
 protected:
-	virtual void storeAtom(unsigned int atomUid, Gringo::Value v) override;
+	virtual void storeAtom(uint32_t atom, Gringo::Symbol sym) override;
 
 	ItemAtomInfos                   itemAtomInfos;
 	AuxItemAtomInfos                auxItemAtomInfos;

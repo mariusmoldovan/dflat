@@ -24,7 +24,7 @@ along with D-FLAT.  If not, see <http://www.gnu.org/licenses/>.
 #include <gringo/input/programbuilder.hh>
 #include <gringo/output/output.hh>
 #include <gringo/logger.hh>
-#include <gringo/scripts.hh>
+#include <clingo.hh>
 #include <clasp/clasp_facade.h>
 
 #include "Solver.h"
@@ -104,8 +104,7 @@ Solver::Solver(const Decomposition& decomposition, const Application& app, const
 
 		std::unique_ptr<Gringo::Output::OutputBase> out(new Gringo::Output::OutputBase({}, gringoOutput));
 		Gringo::Input::Program program;
-		asp_utils::DummyGringoModule module;
-		Gringo::Scripts scripts(module);
+		Gringo::Scripts scripts();
 		Gringo::Defines defs;
 		Gringo::Input::NongroundProgramBuilder gringoProgramBuilder(scripts, program, *out, defs);
 		Gringo::Input::NonGroundParser parser(gringoProgramBuilder);
@@ -197,8 +196,7 @@ void Solver::startSolvingForCurrentRowCombination()
 		GringoOutputProcessor gringoOutput(claspProgramBuilder);
 		std::unique_ptr<Gringo::Output::OutputBase> out(new Gringo::Output::OutputBase({}, gringoOutput));
 		Gringo::Input::Program program;
-		asp_utils::DummyGringoModule module;
-		Gringo::Scripts scripts(module);
+		Gringo::Scripts scripts();
 		Gringo::Defines defs;
 		Gringo::Input::NongroundProgramBuilder gringoProgramBuilder(scripts, program, *out, defs);
 		Gringo::Input::NonGroundParser parser(gringoProgramBuilder);
